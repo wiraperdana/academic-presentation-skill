@@ -83,7 +83,35 @@ Sebelum menulis slide, tulis ringkasan kerja untuk diri sendiri, tidak perlu dis
 - Kontribusi dan capaian, misalnya publikasi.
 - Apa yang **perlu** dan **ingin** didengar penonton ini, dan apa yang boleh dibuang.
 
-### Langkah 4. Tulis outline
+### Langkah 4. Sajikan tabel alur dulu, lalu tunggu
+
+Sebelum menulis outline, sajikan **tabel alur**: satu baris per slide, berisi nomor, judul, dan satu kalimat pesan. Tidak ada poin isi, visual, atau sumber di tahap ini.
+
+```
+| # | Slide | Pesan (satu kalimat) |
+|---|---|---|
+| S02 | Gambaran Umum | ... |
+```
+
+Aturannya:
+
+1. **Susun dari nol menurut logika penonton,** bukan dengan menambal outline atau dokumen lama. Bahan lama adalah sumber isi, bukan cetakan urutan.
+2. **Uji tiap baris:** apakah orang awam bisa mengikuti dari baris sebelumnya ke baris ini tanpa lompatan?
+3. **Balasan ringkas.** Tabel alur adalah isi utama balasan. Penjelasan cukup beberapa baris di bawahnya. Pengguna harus bisa menilai alur dalam satu layar.
+4. **Tunggu persetujuan atau koreksi** sebelum menulis outline, membangun deck, atau membuat gambar. Koreksi alur di tahap ini paling murah.
+
+Periksa tabel alur terhadap daftar ini:
+
+- Cover hanya judul dan identitas, tanpa subtitle gimmick.
+- Gambaran umum memakai kegiatan sehari-hari yang sangat lazim, sehingga penonton ikut merasakan masalahnya.
+- Istilah dasar dijelaskan sebelum masuk teknis.
+- Latar belakang menunjukkan kegawatan dengan bukti yang berdampak luas: skala pemakaian, kegagalan model terbaik, insiden nyata, dan pengakuan pihak terdepan di bidangnya. Angka yang lemah atau sempit tidak dipakai.
+- **Setiap pilihan metode utama punya slide justifikasi:** kenapa pendekatan ini, dibanding alternatifnya, lengkap dengan keterbatasannya.
+- Alur penelitian keseluruhan tampil sebagai diagram tahapan. Label luaran, misalnya Paper 1, cukup label kecil, bukan judul besar.
+- Label teknis rancangan, misalnya nama peran agen, selalu didahului bahasa manusia.
+- Cakupan mengikuti arahan pemilik riset. Bagian di luar cakupan cukup tampil sebagai roadmap.
+
+### Langkah 5. Tulis outline
 
 Salin `templates/outline-template.md` ke `<folder-deck>/outline.md`, lalu isi mengikuti kerangka acara di `references/struktur-acara.md`.
 
@@ -109,7 +137,7 @@ Perbaiki semua GALAT. Tindak lanjuti setiap CATAT, atau catat alasan mengabaikan
 
 **Tunjukkan outline ke pengguna dan tunggu persetujuan** sebelum lanjut. Mengubah outline jauh lebih murah daripada mengubah 30 gambar.
 
-### Langkah 5. Bangun deck PPTX dan prompt
+### Langkah 6. Bangun deck PPTX dan prompt
 
 ```bash
 uv run scripts/build_pptx.py <folder-deck>/outline.md --out <folder-deck>/deck.pptx [--template kampus.pptx] [--primary 1F3A5F --accent 2A9D8F]
@@ -120,7 +148,18 @@ python3 scripts/build_prompts.py <folder-deck>/outline.md --out-dir <folder-deck
 - Prompt sengaja berisi **konten saja**: pesan, isi, arahan visual, data, dan daftar teks yang boleh muncul. Tata letak diserahkan ke generator gambar.
 - Ganti gaya bersama lewat field `gaya_visual` di frontmatter outline.
 
-### Langkah 6. Generate infografis lewat claude-imagegen
+### Langkah 7. Generate infografis lewat claude-imagegen
+
+**Pilih rujukan desain per slide bila pengguna punya galeri.** Galeri adalah folder berisi contoh slide infografis yang disukai pengguna. Satu rujukan untuk seluruh deck membuat semua slide bertata letak sama, padahal slide statistik, alur proses, perbandingan, dan istilah butuh layout berbeda.
+
+1. Isi `galeri_gaya: <folder>` di frontmatter outline.
+2. Buat lembar kontak galeri, lihat setiap gambar, lalu tulis `<folder-deck>/katalog-gaya.md` memakai format `references/katalog-gaya.md`: satu baris per gambar, berisi pola layout dan peran slide yang cocok.
+3. Untuk tiap slide, pilih satu gambar yang pola layout-nya paling cocok dengan peran dan isi slide, lalu isi field `rujukan_gaya: <nama berkas>`. Jangan memakai satu rujukan untuk semua slide, kecuali galerinya memang hanya satu pola.
+4. Tunjukkan pemetaan slide ke rujukan sebagai tabel ringkas, lalu tunggu persetujuan pengguna.
+5. `build_prompts.py` menulis `briefs/<ID>.ref`, dan `gen_images.sh` melampirkannya otomatis. Prompt sudah memuat larangan menyalin kata, topik, angka, logo, dan sitasi dari rujukan.
+
+Bila galeri berasal dari pekerjaan klien, pakai sebagai rujukan desain saja, dan periksa hasilnya untuk memastikan tidak ada isi klien yang ikut terbawa.
+
 
 Sampaikan dua hal ini sekali per sesi sebelum mulai:
 
@@ -130,25 +169,29 @@ Sampaikan dua hal ini sekali per sesi sebelum mulai:
 Lalu jalankan bertahap:
 
 ```bash
-scripts/gen_images.sh --dir <folder-deck> --only S01           # jangkar gaya
+scripts/gen_images.sh --dir <folder-deck> --only S01 --style-guide <AGENTS.md>   # jangkar gaya
 # periksa images/S01.png secara visual, revisi sampai disetujui
 scripts/gen_images.sh --dir <folder-deck> --anchor S01          # sisanya, memakai S01 sebagai rujukan gaya
 scripts/gen_images.sh --dir <folder-deck> --only S07 --anchor S01 --force   # revisi satu slide
 ```
 
+Secara default Codex me-refine brief lebih dulu sebagai art director. Bila workspace punya aturan bahasa dan pedagogi, misalnya `AGENTS.md`, teruskan lewat `--style-guide`. Teks di gambar sebaiknya label pendek lewat field `teks_gambar`, karena brief yang padat teks menghasilkan desain yang sesak.
+
 Script mencari `gen.sh` milik claude-imagegen di `~/.claude/skills/` atau `~/.agents/skills/`, atau di variabel `CLAUDE_IMAGEGEN_GEN`. Pakai `--dry-run` untuk melihat perintahnya tanpa memakai kuota. Bila agent yang berjalan adalah Codex sendiri, pakai alat `image_gen` bawaannya per berkas di `briefs/`.
 
 **Periksa setiap gambar secara visual** memakai `references/qa-checklist.md`. Yang paling sering salah: ejaan, angka pada grafik, dan teks liar. Untuk perbaikan kecil, revisi sempit lebih andal daripada generate ulang. Lihat bagian revisi di skill claude-imagegen.
 
-### Langkah 7. Rakit deck gambar
+### Langkah 8. Rakit deck gambar
 
 ```bash
 uv run scripts/build_image_deck.py <folder-deck>/outline.md --dir <folder-deck> --out <folder-deck>/deck-infografis.pptx [--fit contain|cover|auto]
 ```
 
+Bila slide perlu badge institusi, isi `ruang_badge: kanan-atas` di frontmatter sebelum generate, lalu rakit dengan `--badge <logo.png>`. Logo tidak pernah digambar generator. Slide yang gambarnya bukan hasil generate, misalnya potongan infografis asli, dikecualikan lewat `--badge-skip`.
+
 Generator sering menghasilkan rasio 3:2. `contain` (default) menaruh gambar utuh dengan warna tepi sebagai latar, `cover` memotong supaya penuh, dan `auto` menyamakan ukuran slide dengan gambar. Slide yang gambarnya belum ada diberi penanda, bukan dilewati.
 
-### Langkah 8. Periksa dan serahkan
+### Langkah 9. Periksa dan serahkan
 
 Render kedua deck dan lihat setiap halaman:
 

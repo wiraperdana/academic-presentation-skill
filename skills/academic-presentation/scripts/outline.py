@@ -45,7 +45,7 @@ PERAN = {
     "metode", "ilustrasi", "perbandingan", "eksperimen", "hasil", "demo",
     "kesimpulan", "rencana", "penutup", "bagian", "lainnya",
 }
-LIST_FIELDS = {"isi", "teks_gambar"}
+LIST_FIELDS = {"isi", "teks_gambar", "istilah"}
 
 
 @dataclass

@@ -4,12 +4,15 @@
 #
 # --anchor S01  gambar slide itu dipakai sebagai rujukan gaya untuk slide lain (disarankan,
 #               setelah S01 diperiksa dan disetujui).
-# --ref FILE    rujukan gaya dari luar, misalnya template kampus yang sudah dirender.
+# --ref FILE    rujukan gaya dari luar untuk semua slide. Rujukan per slide dibaca dari briefs/<ID>.ref,
+#               yang ditulis build_prompts.py dari field rujukan_gaya di outline.
 # --only        hanya slide tertentu, dipisah koma. Berguna untuk revisi.
+# --style-guide FILE  aturan bahasa dan pedagogi untuk refine prompt oleh Codex (misalnya AGENTS.md).
+# --no-refine   kirim brief apa adanya, tanpa refine.
 # --force       timpa gambar yang sudah ada. Tanpa ini, slide yang sudah punya gambar dilewati.
 set -euo pipefail
 
-dir=""; anchor=""; ref=""; only=""; force=0; dry=0
+dir=""; anchor=""; ref=""; only=""; force=0; dry=0; extra=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dir) dir=$2; shift 2 ;;
@@ -17,8 +20,10 @@ while [[ $# -gt 0 ]]; do
     --ref) ref=$2; shift 2 ;;
     --only) only=",$2,"; shift 2 ;;
     --force) force=1; shift ;;
+    --style-guide) extra+=(--style-guide "$2"); shift 2 ;;
+    --no-refine) extra+=(--no-refine); shift ;;
     --dry-run) dry=1; shift ;;
-    -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
     *) echo "Argumen tidak dikenal: $1" >&2; exit 2 ;;
   esac
 done
@@ -43,10 +48,15 @@ for brief in "$dir"/briefs/S*.txt; do
   if [[ -f "$out" && $force -eq 0 ]]; then skipped=$((skipped + 1)); continue; fi
   args=(--out "$out" --brief "$brief")
   [[ -n "$ref" ]] && args+=(--ref "$ref")
+  if [[ -f "$dir/briefs/$id.ref" ]]; then
+    slide_ref=$(head -1 "$dir/briefs/$id.ref")
+    [[ -f "$slide_ref" ]] && args+=(--ref "$slide_ref")
+  fi
   if [[ -n "$anchor" && "$id" != "$anchor" && -f "$dir/images/$anchor.png" ]]; then
     args+=(--ref "$dir/images/$anchor.png")
   fi
   [[ $dry -eq 1 ]] && args+=(--dry-run)
+  args+=("${extra[@]+"${extra[@]}"}")
   echo "== $id"
   if "$gen" "${args[@]}"; then made=$((made + 1)); else failed+=("$id"); fi
 done

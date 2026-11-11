@@ -55,6 +55,9 @@ def main() -> int:
     ap.add_argument("--dir", type=Path, required=True, help="folder deck berisi images/")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--fit", choices=["contain", "cover", "auto"], default="contain")
+    ap.add_argument("--badge", type=Path, help="gambar badge institusi, ditempel di pojok kanan atas tiap slide kecuali yang dikecualikan")
+    ap.add_argument("--badge-width", type=float, default=0.065, help="lebar badge sebagai fraksi lebar slide, default 0,065")
+    ap.add_argument("--badge-skip", default="", help="ID slide tanpa badge, dipisah koma, misalnya S23,S24")
     a = ap.parse_args()
 
     meta, slides = parse(a.outline)
@@ -103,6 +106,10 @@ def main() -> int:
                 pic.crop_left = pic.crop_right = cx
                 pic.crop_top = pic.crop_bottom = cy
                 pic.left, pic.top, pic.width, pic.height = 0, 0, W, H
+        if a.badge and p is not None and s.id not in {x.strip() for x in a.badge_skip.split(",") if x.strip()}:
+            bw = int(W * a.badge_width)
+            bh = int(bw * Image.open(a.badge).height / Image.open(a.badge).width)
+            sl.shapes.add_picture(str(a.badge), Emu(W - bw - int(W * 0.035)), Emu(0), Emu(bw), Emu(bh))
         parts = [x for x in [s.get("catatan"), f"Sumber: {s.get('sumber')}" if s.get("sumber") else ""] if x]
         if parts:
             sl.notes_slide.notes_text_frame.text = "\n\n".join(parts)

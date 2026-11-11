@@ -37,7 +37,9 @@ def q(t: str) -> str:
 
 def allowed_text(meta: dict, s) -> list[str]:
     if s.items("teks_gambar"):
-        return s.items("teks_gambar")
+        # Kalimat pesan selalu ikut, supaya slide tetap menyampaikan intinya tanpa narasi.
+        extra = [s.get("pesan")] if s.get("pesan") and s.peran not in {"cover"} else []
+        return s.items("teks_gambar") + [x for x in extra if x not in s.items("teks_gambar")]
     if s.peran == "cover":
         vals = [s.judul or meta.get("judul"), meta.get("subjudul"), meta.get("acara_label"),
                 meta.get("penyaji"), meta.get("afiliasi"), meta.get("tanggal")]
@@ -45,7 +47,7 @@ def allowed_text(meta: dict, s) -> list[str]:
     if s.peran == "bagian":
         return [v for v in [s.judul, s.get("pesan")] if v]
     data = [d.strip() for d in str(s.get("data")).split(";") if d.strip()]
-    return [v for v in [s.judul, s.get("pesan"), *s.items(), *data] if v]
+    return [v for v in [s.judul, s.get("pesan"), *s.items("istilah"), *s.items(), *data] if v]
 
 
 def prompt_for(meta: dict, s, style: str) -> str:
@@ -64,7 +66,10 @@ def prompt_for(meta: dict, s, style: str) -> str:
     elif s.peran == "bagian":
         out.append("This is a section divider slide. One bold visual, very little text.")
     else:
-        out.append(f"Key message the audience must grasp in five seconds: {s.get('pesan')}")
+        out.append(f"Key message, shown as the subtitle under the title: {s.get('pesan')}")
+        if s.items("istilah"):
+            out.append("Basic terms strip near the top (term: short definition):")
+            out += [f"- {x}" for x in s.items("istilah")]
         if s.items():
             out.append("Content to show:")
             out += [f"- {x}" for x in s.items()]
@@ -72,8 +77,13 @@ def prompt_for(meta: dict, s, style: str) -> str:
         out.append(f"Visual direction: {s.get('visual')}")
     if s.get("data"):
         out.append(f"Data to plot exactly, no other values: {s.get('data')}")
+    if meta.get("ruang_badge", "").strip().lower() in {"kanan-atas", "ya", "true"}:
+        out.append("Reserve the top-right corner for an institution badge that will be added later: keep a clear area "
+                   "about 8% of the slide width and 22% of its height at the top-right edge, overlapping the header band. "
+                   "Place no text, icon, or important element there, and keep the title clear of it.")
     out += [
         "",
+        "Citations in parentheses, such as (Author et al., 2024), belong to the claim they follow; show them in small grey text directly under or after that claim, exactly as written. "
         "Integrity rules: use only the facts, numbers, and names given here. Do not invent data, "
         "chart values, axis numbers, citations, equations, logos, institution names, or people. "
         "Do not draw recognizable faces of real people.",
@@ -121,8 +131,25 @@ def main() -> int:
         "Ganti gaya ini di field `gaya_visual` pada frontmatter outline, lalu jalankan ulang script.",
         "",
     ]
+    galeri = meta.get("galeri_gaya", "")
+    base = a.outline.resolve().parent
     for s in slides:
         p = prompt_for(meta, s, style)
+        ref = s.get("rujukan_gaya")
+        ref_file = briefs / f"{s.id}.ref"
+        if ref:
+            rp = Path(ref) if Path(ref).is_absolute() else (Path(galeri) / ref if galeri else base / ref)
+            if not rp.is_absolute():
+                rp = base / rp
+            if rp.exists():
+                ref_file.write_text(str(rp.resolve()) + "\n", encoding="utf-8")
+                p += ("\n\nThe attached reference image is a STYLE AND LAYOUT reference only: match its layout pattern, "
+                      "header, panel structure, use of photos and icons, citation styling, and takeaway banner. "
+                      "Do not copy any of its words, topics, numbers, logos, or citations.")
+            else:
+                print(f"CATAT  {s.id}: rujukan_gaya tidak ditemukan: {rp}")
+        elif ref_file.exists():
+            ref_file.unlink()
         (briefs / f"{s.id}.txt").write_text(p + "\n", encoding="utf-8")
         md += [f"## {s.id} · {s.judul}", "", f"Peran: `{s.peran}`. Bagian: `{s.get('bagian')}`.", "",
                "```text", p, "```", ""]

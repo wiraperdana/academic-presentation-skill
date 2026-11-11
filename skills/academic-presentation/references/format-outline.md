@@ -23,6 +23,8 @@ Diapit dua baris `---` di awal berkas. Satu field per baris, berbentuk `kunci: n
 | `audiens` | tidak | Siapa yang menonton, masuk ke prompt infografis |
 | `bahasa` | tidak | `id` (default) atau `en`, bahasa teks di dalam gambar |
 | `gaya_visual` | tidak | Gaya bersama semua infografis, dalam bahasa Inggris |
+| `ruang_badge` | tidak | `kanan-atas` agar infografis menyisakan pojok kanan atas untuk badge institusi. Tempel badgenya lewat `build_image_deck.py --badge` |
+| `galeri_gaya` | tidak | Folder contoh slide infografis yang disukai pengguna, dipakai sebagai rujukan desain per slide |
 
 ## Slide
 
@@ -45,6 +47,8 @@ Di bawah heading, field ditulis sebagai butir `- kunci: nilai`. Field daftar (`i
 | `visual` | tidak | Arahan gambar: apa yang digambar dan hubungan apa yang harus terlihat |
 | `gambar` | tidak | Path gambar asli (relatif terhadap outline), misalnya grafik dari paper. Mengisi kotak visual deck PPTX |
 | `data` | tidak | Angka yang harus diplot persis di infografis, contoh `WD 5207; BF 3101; SSO 243` |
+| `istilah` | tidak | Daftar `istilah: definisi singkat` untuk strip istilah dasar di infografis |
+| `rujukan_gaya` | tidak | Nama berkas di `galeri_gaya` (atau path) yang jadi rujukan desain slide ini. Pilih per slide lewat `katalog-gaya.md` |
 | `teks_gambar` | tidak | Menggantikan daftar teks yang diizinkan muncul di infografis. Pakai bila judul dan isi terlalu panjang untuk gambar |
 | `sumber` | wajib bila ada angka | Lokasi bukti, contoh `[01, hal. 12]`, atau sitasi APA 7 |
 | `catatan` | tidak | Naskah bicara. Masuk ke catatan pembicara di kedua deck |
