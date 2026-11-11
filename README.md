@@ -45,12 +45,37 @@ uv run $S/ingest.py --out presentasi/sumber --render paper.pdf slide-lama.pptx h
 python3 $S/outline.py check presentasi/outline.md
 uv run $S/build_pptx.py presentasi/outline.md --out presentasi/deck.pptx
 python3 $S/build_prompts.py presentasi/outline.md --out-dir presentasi
-$S/gen_images.sh --dir presentasi --only S01            # jangkar gaya, periksa dulu
+$S/gen_images.sh --dir presentasi --only S01 --style-guide AGENTS.md   # jangkar gaya, periksa dulu
 $S/gen_images.sh --dir presentasi --anchor S01          # sisanya
 uv run $S/build_image_deck.py presentasi/outline.md --dir presentasi --out presentasi/deck-infografis.pptx
 ```
 
 Coba dengan outline contoh di `skills/academic-presentation/examples/contoh-outline.md`. Topik dan angkanya fiktif.
+
+## Alur kerja dengan manusia di dalam loop
+
+Skill berhenti di tiga titik dan menunggu persetujuan:
+
+1. **Tabel alur.** Satu baris per slide: nomor, judul, dan satu kalimat pesan. Alur disusun dari nol menurut logika penonton, lalu disetujui sebelum outline ditulis.
+2. **Outline.** Isi tiap slide beserta sumber buktinya, disetujui sebelum deck dan gambar dibuat.
+3. **Pemetaan rujukan desain.** Slide mana memakai contoh desain mana, disetujui sebelum gambar di-generate.
+
+## Galeri rujukan desain
+
+Bila Anda punya contoh slide infografis yang disukai, simpan di satu folder lalu isi `galeri_gaya: <folder>` di frontmatter outline. Agent melihat galeri sekali, menulis `katalog-gaya.md` di folder itu, lalu memilih satu rujukan per slide lewat field `rujukan_gaya`. Slide statistik, alur proses, perbandingan, dan istilah masing-masing mendapat rujukan dengan pola yang cocok. Rujukan hanya dipakai untuk desain dan tata letak; prompt melarang menyalin kata, angka, logo, dan sitasinya. Format katalog ada di `skills/academic-presentation/references/katalog-gaya.md`.
+
+## Badge institusi
+
+Isi `ruang_badge: kanan-atas` di frontmatter agar setiap infografis menyisakan pojok kanan atas. Badge ditempel saat deck gambar dirakit, karena logo tidak pernah digambar generator:
+
+```bash
+uv run $S/build_image_deck.py presentasi/outline.md --dir presentasi --out presentasi/deck-infografis.pptx \
+  --badge logo-kampus.png --badge-skip S23,S24
+```
+
+## Mutu gambar
+
+`gen_images.sh` meneruskan brief ke claude-imagegen, yang meminta Codex me-refine brief lebih dulu sebagai art director. Tambahkan `--style-guide AGENTS.md` bila workspace Anda punya aturan bahasa dan pedagogi. Isi slide yang padat (field `istilah`, sitasi di akhir klaim, dan arahan `visual` yang spesifik) menghasilkan desain yang jauh lebih matang daripada label pendek.
 
 ## Perlu diketahui
 
@@ -58,6 +83,7 @@ Coba dengan outline contoh di `skills/academic-presentation/examples/contoh-outl
 - Setiap gambar memakai kuota langganan ChatGPT, sekitar 2 menit per gambar.
 - Teks dan angka di dalam gambar bisa salah. Periksa setiap gambar, dan pakai grafik asli dari paper untuk slide hasil.
 - Skill tidak mengarang angka atau sitasi. Setiap angka di outline wajib menunjuk lokasinya di bahan masukan.
+- Field `catatan` di outline hanya masuk ke catatan pembicara, tidak pernah ke gambar. Field `sumber` juga tidak tampil di gambar; sitasi yang ingin terlihat ditulis di akhir butir `isi`.
 
 ## Lisensi
 
