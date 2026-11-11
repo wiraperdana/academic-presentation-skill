@@ -1,0 +1,7 @@
+.DS_Store
+AGENTS.md
+CLAUDE.md
+STATUS.md
+_output/
+__pycache__/
+*.pyc
