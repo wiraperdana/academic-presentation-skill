@@ -77,6 +77,32 @@ Nilai ini adalah label kerja skill, sebagian besar mengikuti judul slide di cont
 - catatan: Tekankan bahwa keunggulan terbesar muncul saat penyerang berkerumun.
 ```
 
+## Penanda: apa yang tampil di gambar
+
+Jalankan `python3 scripts/outline.py tandai outline.md` agar field tiap slide dikelompokkan di bawah tiga penanda komentar:
+
+```markdown
+## S05 · Judul slide
+<!-- ▸ pengaturan slide, tidak tampil -->
+- peran: ...
+<!-- ▸ TAMPIL DI GAMBAR (judul slide juga tampil) -->
+- pesan: ...
+- istilah: ...
+- isi: ...
+<!-- ▸ tidak tampil di gambar: arahan visual, jejak bukti, catatan pembicara -->
+- visual: ...
+- sumber: ...
+- catatan: ...
+```
+
+| Kelompok | Field | Nasibnya |
+|---|---|---|
+| Pengaturan | `peran`, `bagian`, `rujukan_gaya` | Mengatur struktur dan desain, tidak tampil |
+| Tampil di gambar | judul slide, `pesan`, `istilah`, `isi`, `data`, `teks_gambar` | Ditulis persis di infografis |
+| Tidak tampil | `visual`, `gambar`, `sumber`, `catatan` | `visual` adalah arahan bagi generator, `sumber` jejak bukti, `catatan` masuk catatan pembicara |
+
+Penanda aman dijalankan berulang, dan isinya tidak mengubah hasil parse. Sitasi yang ingin terlihat di slide ditulis di akhir butir `isi`, bukan di `sumber`.
+
 ## Pemeriksaan
 
 ```bash

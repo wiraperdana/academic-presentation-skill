@@ -127,6 +127,12 @@ Aturan menulis:
 8. **Integritas bukti.** Setiap angka, nama metode, dan klaim wajib ditelusuri ke bahan lewat field `sumber`. Jangan menambah angka, membulatkan diam-diam, atau mengarang sitasi. Sitasi baru di luar bahan masukan wajib diverifikasi DOI-nya, dan bila tidak bisa, tandai `[UNVERIFIED]`.
 9. **Grafik asli.** Bila paper punya grafik hasil, rujuk render halamannya atau potongan gambarnya lewat field `gambar`, supaya deck yang bisa disunting memakai grafik asli.
 
+Lalu tandai apa yang tampil di gambar, supaya pengguna tahu persis teks mana yang akan muncul di slide saat menyunting:
+
+```bash
+python3 scripts/outline.py tandai <folder-deck>/outline.md
+```
+
 Lalu periksa:
 
 ```bash

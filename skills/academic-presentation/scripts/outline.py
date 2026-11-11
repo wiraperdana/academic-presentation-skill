@@ -22,6 +22,7 @@ Format lengkapnya ada di references/format-outline.md. Ringkasnya:
 Pakai:
     python3 outline.py check outline.md     # periksa, keluar 1 bila ada galat
     python3 outline.py json  outline.md     # cetak hasil parse sebagai JSON
+    python3 outline.py tandai outline.md    # kelompokkan field: tampil di gambar atau tidak
 
 Hanya memakai pustaka standar, supaya bisa dipanggil tanpa instalasi.
 """
@@ -195,7 +196,83 @@ def check(meta: dict, slides: list[Slide]) -> tuple[list[str], list[str]]:
     return err, warn
 
 
+# Pengelompokan field menurut nasibnya di infografis. Dipakai perintah "tandai".
+GROUPS = [
+    ("pengaturan slide, tidak tampil", ["peran", "bagian", "rujukan_gaya"]),
+    ("TAMPIL DI GAMBAR (judul slide juga tampil)", ["pesan", "istilah", "isi", "data", "teks_gambar"]),
+    ("tidak tampil di gambar: arahan visual, jejak bukti, catatan pembicara", ["visual", "gambar", "sumber", "catatan"]),
+]
+MARK_PREFIX = "<!-- ▸ "
+
+
+def tandai(path: str | Path) -> int:
+    """Susun ulang field tiap slide ke tiga kelompok berpenanda komentar. Isi field tidak diubah."""
+    path = Path(path)
+    before = parse(path)
+    lines = path.read_text(encoding="utf-8").splitlines()
+    out: list[str] = []
+    i = 0
+    known = [f for _, fs in GROUPS for f in fs]
+    while i < len(lines):
+        ln = lines[i]
+        if not HEAD_RE.match(ln):
+            out.append(ln)
+            i += 1
+            continue
+        out.append(ln)
+        i += 1
+        chunks: dict[str, list[str]] = {}
+        order: list[str] = []
+        tail: list[str] = []
+        cur = None
+        while i < len(lines) and not lines[i].startswith("## "):
+            l2 = lines[i]
+            fm = FIELD_RE.match(l2)
+            if fm:
+                cur = fm.group(1)
+                chunks[cur] = [l2]
+                order.append(cur)
+            elif l2.startswith(MARK_PREFIX):
+                pass  # penanda lama dibuang, ditulis ulang di bawah
+            elif cur and l2.startswith("  "):
+                chunks[cur].append(l2)
+            elif not l2.strip():
+                cur = None
+                tail.append(l2)
+            else:
+                tail.append(l2)
+            i += 1
+        peran = chunks.get("peran", ["- peran: lainnya"])[0].split(":", 1)[1].strip()
+        for label, fields in GROUPS:
+            present = [f for f in fields if f in chunks]
+            if label.startswith("TAMPIL") and peran == "cover":
+                out.append(f"{MARK_PREFIX}TAMPIL DI GAMBAR: judul slide, plus penyaji, afiliasi, acara, dan tanggal dari frontmatter -->")
+                for f in present:
+                    out.extend(chunks[f])
+                continue
+            if not present:
+                continue
+            out.append(f"{MARK_PREFIX}{label} -->")
+            for f in present:
+                out.extend(chunks[f])
+        others = [f for f in order if f not in known]
+        for f in others:
+            out.extend(chunks[f])
+        out.extend(t for t in tail if t.strip()) 
+        out.append("")
+    text = "\n".join(out).rstrip("\n") + "\n"
+    while "\n\n\n" in text:
+        text = text.replace("\n\n\n", "\n\n")
+    path.write_text(text, encoding="utf-8")
+    after = parse(path)
+    same = before[0] == after[0] and [(s.id, s.judul, s.fields) for s in before[1]] == [(s.id, s.judul, s.fields) for s in after[1]]
+    print(f"{len(after[1])} slide ditandai. Isi field {'utuh' if same else 'BERUBAH, periksa'}.")
+    return 0 if same else 1
+
+
 def main(argv: list[str]) -> int:
+    if len(argv) == 3 and argv[1] == "tandai":
+        return tandai(argv[2])
     if len(argv) != 3 or argv[1] not in {"check", "json"}:
         print(__doc__)
         return 2
